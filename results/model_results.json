@@ -1,0 +1,248 @@
+{
+    "svm": {
+        "accuracy": 0.8933,
+        "f1_score": 0.2,
+        "params": {
+            "kernel": "rbf",
+            "class_weight": "balanced"
+        }
+    },
+    "pytorch_nn": {
+        "accuracy": 0.9667,
+        "f1_score": 0.0,
+        "params": {
+            "architecture": [
+                46,
+                64,
+                32,
+                1
+            ],
+            "dropout": 0.3,
+            "optimizer": "Adam",
+            "lr": 0.001,
+            "epochs": 100
+        }
+    },
+    "logistic_regression": {
+        "accuracy": 0.6339,
+        "f1_score": 0.0238,
+        "params": {
+            "C": 1.0,
+            "penalty": "l2",
+            "solver": "lbfgs",
+            "max_iter": 1000
+        }
+    },
+    "random_forest": {
+        "accuracy": 0.9688,
+        "f1_score": 0.0,
+        "params": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "random_state": 42
+        }
+    },
+    "xgboost": {
+        "accuracy": 0.9643,
+        "f1_score": 0.0,
+        "params": {
+            "n_estimators": 100,
+            "max_depth": 5,
+            "learning_rate": 0.1,
+            "eval_metric": "logloss"
+        }
+    },
+    "logistic_regression_smote": {
+        "accuracy": 0.5829,
+        "f1_score": 0.0714,
+        "params": {
+            "resampling": "SMOTE",
+            "C": 1.0,
+            "penalty": "l2",
+            "solver": "lbfgs",
+            "max_iter": 1000
+        }
+    },
+    "random_forest_smote": {
+        "accuracy": 0.94,
+        "f1_score": 0.3077,
+        "params": {
+            "resampling": "SMOTE",
+            "n_estimators": 100,
+            "max_depth": 10,
+            "random_state": 42
+        }
+    },
+    "xgboost_smote": {
+        "accuracy": 0.9723,
+        "f1_score": 0.9726,
+        "params": {
+            "resampling": "SMOTE",
+            "n_estimators": 100,
+            "max_depth": 5,
+            "learning_rate": 0.1,
+            "eval_metric": "logloss"
+        }
+    },
+    "svm_smote": {
+        "accuracy": 0.5052,
+        "f1_score": 0.0,
+        "params": {
+            "resampling": "SMOTE",
+            "kernel": "rbf",
+            "class_weight": "balanced"
+        }
+    },
+    "pytorch_nn_smote": {
+        "accuracy": 0.4948,
+        "f1_score": 0.662,
+        "params": {
+            "resampling": "SMOTE",
+            "architecture": [
+                47,
+                64,
+                32,
+                1
+            ],
+            "dropout": 0.3,
+            "optimizer": "Adam",
+            "lr": 0.001,
+            "epochs": 100
+        }
+    },
+    "xgboost_smote_tuned": {
+        "accuracy": 0.9267,
+        "f1_score": 0.1538,
+        "params": {
+            "resampling": "SMOTE",
+            "learning_rate": 0.2,
+            "max_depth": 3,
+            "n_estimators": 200
+        }
+    },
+    "xgboost_smote_tuned_thresh_0.3": {
+        "accuracy": 0.92,
+        "f1_score": 0.1429,
+        "params": {
+            "resampling": "SMOTE",
+            "learning_rate": 0.2,
+            "max_depth": 3,
+            "n_estimators": 200,
+            "scale_pos_weight": 30.36842105263158,
+            "threshold": 0.3
+        }
+    },
+    "pytorch_nn_smote_tuned": {
+        "accuracy": 0.9667,
+        "f1_score": 0.0,
+        "params": {
+            "resampling": "SMOTE",
+            "architecture": [
+                47,
+                64,
+                64,
+                1
+            ],
+            "dropout": 0.4,
+            "optimizer": "AdamW",
+            "lr": 0.001,
+            "epochs": 120
+        }
+    },
+    "pytorch_nn_smote_tuned_1": {
+        "accuracy": 0.0333,
+        "f1_score": 0.0645,
+        "params": {
+            "resampling": "SMOTE",
+            "architecture": [
+                47,
+                64,
+                32,
+                1
+            ],
+            "dropout": 0.3,
+            "optimizer": "Adam",
+            "lr": 0.001,
+            "epochs": 100
+        }
+    },
+    "pytorch_nn_smote_tuned_2": {
+        "accuracy": 0.9667,
+        "f1_score": 0.0,
+        "params": {
+            "resampling": "SMOTE",
+            "architecture": [
+                47,
+                128,
+                64,
+                32,
+                1
+            ],
+            "dropout": 0.2,
+            "optimizer": "Adam",
+            "lr": 0.0005,
+            "epochs": 150
+        }
+    },
+    "pytorch_nn_smote_tuned_3": {
+        "accuracy": 0.9667,
+        "f1_score": 0.0,
+        "params": {
+            "resampling": "SMOTE",
+            "architecture": [
+                47,
+                64,
+                64,
+                1
+            ],
+            "dropout": 0.4,
+            "optimizer": "AdamW",
+            "lr": 0.001,
+            "epochs": 120
+        }
+    },
+    "random_forest_smote_tuned_1": {
+        "accuracy": 0.9067,
+        "f1_score": 0.2222,
+        "params": {
+            "n_estimators": 50,
+            "max_depth": 5,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "resampling": "SMOTE"
+        }
+    },
+    "random_forest_smote_tuned_2": {
+        "accuracy": 0.9467,
+        "f1_score": 0.3333,
+        "params": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 2,
+            "min_samples_leaf": 2,
+            "resampling": "SMOTE"
+        }
+    },
+    "random_forest_smote_tuned_3": {
+        "accuracy": 0.9333,
+        "f1_score": 0.1667,
+        "params": {
+            "n_estimators": 200,
+            "max_depth": 15,
+            "min_samples_split": 5,
+            "min_samples_leaf": 4,
+            "resampling": "SMOTE"
+        }
+    },
+    "random_forest_smote_tuned_4": {
+        "accuracy": 0.94,
+        "f1_score": 0.3077,
+        "params": {
+            "n_estimators": 150,
+            "max_depth": 8,
+            "min_samples_split": 3,
+            "min_samples_leaf": 2,
+            "resampling": "SMOTE"
+        }
+    }
+}
