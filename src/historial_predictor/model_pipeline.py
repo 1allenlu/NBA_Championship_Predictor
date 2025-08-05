@@ -10,7 +10,7 @@ import mlflow.sklearn
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 import logging
-from src.feature_engineering import FeatureEngineering
+from historial_predictor.feature_engineering import FeatureEngineering
 
 
 @dataclass
