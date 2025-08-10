@@ -41,17 +41,18 @@ It combines **machine learning**, **deep learning**, and an interactive **Stream
 ---
 
 ## 📂 Folder Structure
+
 ├── data/                         # Processed datasets
 │   ├── raw/                      # Raw CSV files
-│   └── processed/                # Cleaned and feature-engineered CSV files
+│   ├── processed/                # Cleaned and feature-engineered CSV files
 │   └── testing/                  # Test files
 ├── models/                       # Trained models (local storage)
 ├── src/
-│   ├── data/                     # Data cleaning scripts
+│   ├── historial_preductor/      # Data cleaning scripts
 │   ├── user_team_simulator/      # Feature engineering, training, calibration, and ensemble code
 │   └── utils/                    # Helper functions
 ├── frontend/
-│   └── team_builder.py           # Streamlit app for user interaction
+│   ├── team_builder.py           # Streamlit app for user interaction
 │   └── historial_preductor.py    # Streamlit app for user interaction
 ├── results/                      # Model evaluation 
 ├── requirements.txt              # Python dependencies
