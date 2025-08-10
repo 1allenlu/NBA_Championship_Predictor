@@ -6,6 +6,7 @@ sys.path.append(str(ROOT))                   # make "src" importable
 
 # std/third‑party
 import os
+import tempfile
 import joblib
 import numpy as np
 import pandas as pd
@@ -18,12 +19,20 @@ from src.user_team_simulator.roster_features import aggregate_team
 # ensure unpickler can resolve SoftVoteEnsemble saved from __main__
 setattr(sys.modules[__name__], "SoftVoteEnsemble", _SV)
 
+# ---- Streamlit page config ----
 st.set_page_config(page_title="NBA Team Builder — Part 2", page_icon="🏗️", layout="wide")
-# ---- Config ----
+
+# ---- Paths / constants ----
 DATA_PATH = "data/processed/players_stats_with_salaries_2025_26.csv"
-MODEL_ENSEMBLE = "models/roster_ensemble.pkl"          # saved by calibrate_and_ensemble.py
-MODEL_SINGLE   = "models/roster_best_model.pkl"        # fallback
+LOCAL_ENSEMBLE = "models/roster_ensemble.pkl"   # saved by calibrate_and_ensemble.py
+LOCAL_SINGLE   = "models/roster_best_model.pkl" # fallback
 DEFAULT_SALARY_CAP = 140_000_000  # $140M as an example cap
+
+# ---- S3 config (env overrides are handy for EC2 later) ----
+S3_BUCKET = os.getenv("S3_BUCKET", "nba-roster-models-allenlu")
+S3_KEY_ENSEMBLE = os.getenv("S3_KEY_ENSEMBLE", "models/roster_ensemble.pkl")
+S3_KEY_SINGLE   = os.getenv("S3_KEY_SINGLE",   "models/roster_best_model.pkl")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
 PRIMARY = "#0EA5E9"  # blue-ish
 st.markdown(f"""
@@ -45,41 +54,58 @@ st.write("")
 @st.cache_data
 def load_players():
     df = pd.read_csv(DATA_PATH)
-    # basic cleaning for UI
     if "salary_2025_26" in df.columns:
         df["salary_2025_26"] = pd.to_numeric(df["salary_2025_26"], errors="coerce")
     else:
         df["salary_2025_26"] = np.nan
 
-    # show nice player label
     df["Player_label"] = df["Player"]
     if "Tm" in df.columns:
         df["Player_label"] = df["Player_label"] + " — " + df["Tm"].astype(str)
 
-    # sort by salary desc for fun
-    df = df.sort_values(by=["salary_2025_26", "Player"], ascending=[False, True])
-    return df
+    return df.sort_values(by=["salary_2025_26", "Player"], ascending=[False, True])
 
-setattr(sys.modules[__name__], "SoftVoteEnsemble", _SV)
-@st.cache_resource
+@st.cache_resource(show_spinner="Loading model…")
 def load_inference_model():
-    # prefer ensemble if exists, else single best model
-    if os.path.exists(MODEL_ENSEMBLE):
-        payload = joblib.load(MODEL_ENSEMBLE)
-        model_or_ensemble = payload.get("ensemble", None) or payload.get("model", None)
-        feature_names = payload.get("feature_names", None)
-        tag = "ensemble"
-    elif os.path.exists(MODEL_SINGLE):
-        payload = joblib.load(MODEL_SINGLE)
-        model_or_ensemble = payload["model"]
-        feature_names = payload.get("feature_names", None)
-        tag = payload.get("tag", "single")
-    else:
-        raise FileNotFoundError("No model found. Train and save models first.")
-    return model_or_ensemble, feature_names, tag
+    """Try S3 (ensemble → single), then local (ensemble → single)."""
+    def _download_s3(key, label):
+        try:
+            import boto3
+            s3 = boto3.client("s3", region_name=AWS_REGION)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                s3.download_fileobj(S3_BUCKET, key, tmp)
+                tmp_path = tmp.name
+            payload = joblib.load(tmp_path)
+            tag = f"s3:{label}"
+            return payload, tag
+        except Exception as e:
+            st.info(f"S3 {label} not available: {e}")
+            return None, None
+
+    # 1) S3 ensemble → 2) S3 single
+    payload, tag = _download_s3(S3_KEY_ENSEMBLE, "ensemble")
+    if payload is None:
+        payload, tag = _download_s3(S3_KEY_SINGLE, "single")
+
+    # 3) Local ensemble → 4) Local single
+    if payload is None and os.path.exists(LOCAL_ENSEMBLE):
+        payload = joblib.load(LOCAL_ENSEMBLE); tag = "local:ensemble"
+    if payload is None and os.path.exists(LOCAL_SINGLE):
+        payload = joblib.load(LOCAL_SINGLE); tag = "local:single"
+
+    if payload is None:
+        raise FileNotFoundError("No model found from S3 or local. Train/upload first.")
+
+    # Support both ensemble and single‑model payload structures
+    model = payload.get("ensemble") or payload.get("model") or payload
+    feature_names = payload.get("feature_names")
+    model_tag = payload.get("tag", tag)
+
+    return model, feature_names, model_tag
 
 players_df = load_players()
 model, feature_names, model_tag = load_inference_model()
+st.caption(f"📦 Model source: **{model_tag}**")
 
 # --- Sidebar: constraints ---
 st.sidebar.header("⚙️ Constraints")
@@ -89,17 +115,11 @@ max_players = st.sidebar.slider("Max roster size", 8, 18, 12)
 
 # --- Player selector ---
 st.subheader("1) Select Players")
-# Multi-select by label, but track the index
 labels = players_df["Player_label"].tolist()
-chosen = st.multiselect(
-    "Choose your roster:",
-    options=labels,
-    default=[],
-    max_selections=max_players
-)
+chosen = st.multiselect("Choose your roster:", options=labels, default=[], max_selections=max_players)
 chosen_rows = players_df[players_df["Player_label"].isin(chosen)].copy()
 
-# Salary + counts row
+# Salary + counts
 total_salary = float(chosen_rows["salary_2025_26"].fillna(0).sum())
 num_players = len(chosen_rows)
 
@@ -113,44 +133,42 @@ with col_c:
     color = "red" if remaining < 0 else "black"
     st.markdown(f'<div class="metric-card"><b>Remaining Cap</b><br><span style="color:{color}">${remaining:,.0f}</span></div>', unsafe_allow_html=True)
 
-# --- Feature aggregation + predict ---
+# --- Predict ---
 st.subheader("2) Predict Championship Probability")
 disabled = False
 msg = None
 if num_players < min_players:
-    disabled = True
-    msg = f"Select at least {min_players} players."
+    disabled, msg = True, f"Select at least {min_players} players."
 elif num_players > max_players:
-    disabled = True
-    msg = f"Reduce to at most {max_players} players."
+    disabled, msg = True, f"Reduce to at most {max_players} players."
 elif total_salary > salary_cap:
-    disabled = True
-    msg = "Salary exceeds cap."
+    disabled, msg = True, "Salary exceeds cap."
 
 if msg:
     st.info(msg)
 
 if st.button("🏆 Predict", disabled=disabled):
-    # Build feature vector from selected players
     feats = aggregate_team(chosen_rows)
     X_team = pd.DataFrame([feats])
 
-    # Align with model features (order + missing columns = 0)
+    # Align with model feature order
     if feature_names is not None:
         for c in feature_names:
             if c not in X_team.columns:
                 X_team[c] = 0.0
         X_team = X_team[feature_names]
     else:
-        # best-effort: keep numeric
         X_team = X_team.select_dtypes(include=[np.number]).fillna(0.0)
 
-    # Predict
-    proba = float(model.predict_proba(X_team)[:, 1][0])  # pos class prob
+    proba = float(model.predict_proba(X_team)[:, 1][0])
     st.success(f"**Predicted championship probability:** {proba*100:.2f}%  \n_Model: {model_tag}_")
 
-    # Show the features used
     with st.expander("Show engineered team features"):
         st.dataframe(X_team.T.rename(columns={0: "value"}))
 
-st.caption("Tip: you can search in the player box and tweak the roster to see how the probability moves.")
+# Optional: a quick “reload model” to clear Streamlit’s cache
+if st.sidebar.button("🔄 Reload model"):
+    load_inference_model.clear()
+    st.experimental_rerun()
+
+st.caption("Tip: search players and tweak the roster to see how the probability moves.")
