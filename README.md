@@ -41,7 +41,7 @@ It combines **machine learning**, **deep learning**, and an interactive **Stream
 ---
 
 ## 📂 Folder Structure
-
+```
 ├── data/                         # Processed datasets
 │   ├── raw/                      # Raw CSV files
 │   ├── processed/                # Cleaned and feature-engineered CSV files
@@ -49,15 +49,14 @@ It combines **machine learning**, **deep learning**, and an interactive **Stream
 ├── models/                       # Trained models (local storage)
 ├── src/
 │   ├── historial_preductor/      # Data cleaning scripts
-│   ├── user_team_simulator/      # Feature engineering, training, calibration, and ensemble code
-│   └── utils/                    # Helper functions
+│   ├── user_team_simulator/      # Feature engineering, training, calibration, and 
 ├── frontend/
 │   ├── team_builder.py           # Streamlit app for user interaction
 │   └── historial_preductor.py    # Streamlit app for user interaction
 ├── results/                      # Model evaluation 
 ├── requirements.txt              # Python dependencies
 └── README.md                     # Project documentation
-
+```
 ---
 
 **Tech Stack:** Python · PyTorch · scikit-learn · XGBoost · Pandas · Streamlit · AWS S3  
